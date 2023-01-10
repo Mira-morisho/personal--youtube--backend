@@ -1,8 +1,18 @@
 const express = require("express");
 const app = express();
+const http = require("http").Server(app);
+const cors = require("cors");
+
+const socketIO = require("socket.io")(http, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
 const connectDb = require("./connexion");
 const bodyParser = require("body-parser");
-const commentaireRoute = require("./Routes/comtroute");
+const commentaireRoute = require("./Routes/comments");
 
 connectDb();
 
@@ -19,10 +29,21 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(cors());
+
+socketIO.on("connection", (socket) => {
+  console.log(`⚡: ${socket.id} user just connected!`);
+
+  //Listen when user disconnecting
+  socket.on("disconnect", () => {
+    console.log("🔥: A user disconnected");
+  });
+});
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use("/commentaire", commentaireRoute);
 
-app.listen(3003, "localhost", () => {
+http.listen(3001, () => {
   console.log("pret à écouter le requetes au port 3001");
 });
